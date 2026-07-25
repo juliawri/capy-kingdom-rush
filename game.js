@@ -137,8 +137,44 @@ buildVariantRow();
 // ============================================================================
 //  IMAGE PRELOADING
 // ============================================================================
+// the "-removebg" source art is a full-size canvas with the crocodile cut out
+// on a transparent background, often with lots of empty margin around it —
+// so the image's raw pixel dimensions don't reflect how big/how-shaped the
+// crocodile actually is. Scanning the alpha channel for the opaque region
+// gives the real subject bounds to crop/scale against instead.
+function computeOpaqueBounds(img) {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const c = canvas.getContext("2d");
+  c.drawImage(img, 0, 0);
+  let data;
+  try {
+    data = c.getImageData(0, 0, canvas.width, canvas.height).data;
+  } catch (e) {
+    return null;
+  }
+  let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      if (data[(y * canvas.width + x) * 4 + 3] > 10) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < minX || maxY < minY) return null;
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
 const crocImages = CROC_VARIANTS.map((src) => {
   const img = new Image();
+  img.cropBox = null;
+  img.addEventListener("load", () => {
+    img.cropBox = computeOpaqueBounds(img);
+  });
   img.src = src;
   return img;
 });
@@ -199,8 +235,8 @@ function seedTiles() {
 function spawnTile(afterX) {
   const airTime = (2 * JUMP_VELOCITY) / GRAVITY;
   const jumpRange = speed * airTime;
-  const gapMax = Math.max(30, Math.min(150, jumpRange * 0.4));
-  const gap = Math.random() < 0.5 ? 20 + Math.random() * (gapMax - 20) : 0;
+  const gapMax = Math.max(24, Math.min(100, jumpRange * 0.26));
+  const gap = Math.random() < 0.5 ? 14 + Math.random() * (gapMax - 14) : 0;
   const type = Math.random() < 0.55 ? "croc" : "bamboo";
   const width = type === "croc" ? 220 + Math.random() * 160 : 160 + Math.random() * 130;
   const startX = afterX + gap;
@@ -560,28 +596,29 @@ function drawTiles() {
     if (t.type === "croc") {
       const img = crocImages[t.crocIdx];
       const bob = Math.sin(scrollX * 0.01 + t.startX) * 3;
-      const h = 90;
       const w = t.width;
-      const topY = GROUND_Y - h / 2 + bob;
-
-      // solid backing spans the full tile so the entire hitbox always reads
-      // as safe platform, no matter how much (or little) of it the source
-      // art below ends up covering.
-      ctx.fillStyle = "#4a8f4a";
-      roundRect(x, topY, w, h, 12);
-      ctx.fill();
-
       if (img.complete && img.naturalWidth) {
-        // fit the whole crocodile within the tile height, preserving its
-        // native aspect ratio (no crop). Forcing a "cover" crop to an exact
-        // w x h box used to cut portrait/square source art down to a thin
-        // sliver of the actual image (looked zoomed in), while wide/landscape
-        // art barely got cropped and filled the whole tile (looked oversized)
-        // — same box, wildly different results depending on source shape.
-        const drawH = h;
-        const drawW = Math.min(w, drawH * (img.naturalWidth / img.naturalHeight));
-        const dx = x + (w - drawW) / 2;
-        ctx.drawImage(img, dx, topY, drawW, drawH);
+        // crop against the crocodile's actual opaque pixel bounds, not the
+        // full (often mostly-transparent-margin) source canvas — otherwise
+        // an image where the croc only fills a small part of the frame gets
+        // treated as if the whole frame were "the croc," throwing off both
+        // the apparent size and how much of it gets cropped.
+        const b = img.cropBox || { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
+        // pick the display height this crocodile would need to show its
+        // full body across the tile's width with zero crop, then clamp to a
+        // reasonable platform-height range.
+        const idealH = w * (b.h / b.w);
+        const h = Math.max(60, Math.min(150, idealH));
+        const topY = GROUND_Y - h / 2 + bob;
+        const scale = Math.max(w / b.w, h / b.h);
+        const sw = w / scale;
+        const sh = h / scale;
+        const sx = b.x + (b.w - sw) / 2;
+        const sy = b.y + (b.h - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, x, topY, w, h);
+      } else {
+        ctx.fillStyle = "#4a8f4a";
+        ctx.fillRect(x, GROUND_Y, w, 34);
       }
     } else {
       // bamboo platform
