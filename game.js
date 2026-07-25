@@ -143,6 +143,21 @@ const crocImages = CROC_VARIANTS.map((src) => {
   return img;
 });
 
+// a few capybara/panda character-select images reused as background friends
+// lounging on the hills, mixed in with the plain emoji so the background has
+// real art alongside them, not just glyphs
+const BG_CRITTER_SPECS = [
+  { species: "capybara", file: "capy1-removebg-preview.png" },
+  { species: "panda", file: "panda1-removebg-preview.png" },
+  { species: "capybara", file: "capy4-removebg-preview.png" },
+  { species: "panda", file: "panda4-removebg-preview.png" },
+];
+const bgCritterImages = BG_CRITTER_SPECS.map(({ species, file }) => {
+  const img = new Image();
+  img.src = iconPath(species, file);
+  return img;
+});
+
 let playerImage = new Image();
 function setPlayerImage() {
   playerImage = new Image();
@@ -193,10 +208,20 @@ function spawnTile(afterX) {
   const distanceMeters = scrollX / PPM;
   const obstacleChance = Math.min(0.22, 0.05 + distanceMeters / 14000);
   let obstacle = null;
-  if (width > 150 && Math.random() < obstacleChance) {
+  if (Math.random() < obstacleChance) {
+    // keep obstacles well clear of both tile edges. Too close to the leading
+    // edge and a player who just landed from crossing the prior gap has no
+    // real reaction time before needing to jump again; too close to the
+    // trailing edge and clearing the obstacle forces a single jump that must
+    // also carry all the way across the next gap. Scale the margin with
+    // speed so it always covers a real ~0.3s reaction window.
+    const edgeMargin = Math.max(90, speed * 0.3);
     const w = OBSTACLE_H;
-    const offsetX = 24 + Math.random() * Math.max(10, width - 48 - w);
-    obstacle = { emoji: OBSTACLE_EMOJIS[Math.floor(Math.random() * OBSTACLE_EMOJIS.length)], offsetX, w };
+    const maxOffset = width - edgeMargin - w;
+    if (maxOffset > edgeMargin) {
+      const offsetX = edgeMargin + Math.random() * (maxOffset - edgeMargin);
+      obstacle = { emoji: OBSTACLE_EMOJIS[Math.floor(Math.random() * OBSTACLE_EMOJIS.length)], offsetX, w };
+    }
   }
 
   tiles.push({
@@ -299,7 +324,13 @@ function checkCollisions() {
   const tile = getTileAtWorldX(centerX);
 
   if (jumpHeight <= 0) {
-    if (!tile) {
+    // require both feet to be over solid ground, not just the center point —
+    // a center-only check let up to half the sprite hang visibly over water
+    // at a platform's edge while still counting as "grounded"
+    const footHalfW = PLAYER_HALF_W * 0.6;
+    const leftFoot = getTileAtWorldX(centerX - footHalfW);
+    const rightFoot = getTileAtWorldX(centerX + footHalfW);
+    if (!tile || !leftFoot || !rightFoot) {
       endGame("water");
       return;
     }
@@ -405,7 +436,19 @@ function render() {
   drawPlayer();
 }
 
-const BG_CRITTER_EMOJIS = ["🦫", "🐼", "🐼", "🦫"];
+// hill row mixes real capybara/panda art in with the plain emoji so the
+// background isn't just glyphs; each image entry falls back to its emoji
+// until the picture finishes loading
+const BG_HILL_ITEMS = [
+  "🦫",
+  { img: bgCritterImages[0], fallback: CHARACTERS.capybara.emoji },
+  "🐼",
+  { img: bgCritterImages[1], fallback: CHARACTERS.panda.emoji },
+  "🦫",
+  { img: bgCritterImages[2], fallback: CHARACTERS.capybara.emoji },
+  "🐼",
+  { img: bgCritterImages[3], fallback: CHARACTERS.panda.emoji },
+];
 const BG_SKY_EMOJIS = ["🦋", "🍃", "🌸", "🐦", "🌺", "🍀"];
 
 function drawBackground() {
@@ -426,7 +469,7 @@ function drawBackground() {
   }
 
   // capybara & panda friends lounging on the hills
-  drawDecorRow(BG_CRITTER_EMOJIS, 0.25, 230, GROUND_Y - 40, 14, `26px ${EMOJI_FONT_STACK}`, 0.95);
+  drawDecorRow(BG_HILL_ITEMS, 0.25, 230, GROUND_Y - 40, 14, `26px ${EMOJI_FONT_STACK}`, 0.95);
 
   // parallax clouds
   ctx.fillStyle = "rgba(255,255,255,0.85)";
@@ -441,8 +484,9 @@ function drawBackground() {
 }
 
 // deterministic per-slot decoration: same world position always renders the same
-// emoji/y-offset, so nothing jitters or reshuffles frame to frame as it scrolls by
-function drawDecorRow(emojis, parallax, spacing, baseY, yJitter, font, alpha) {
+// item/y-offset, so nothing jitters or reshuffles frame to frame as it scrolls by.
+// items may be plain emoji strings or {img, fallback} picture entries.
+function drawDecorRow(items, parallax, spacing, baseY, yJitter, font, alpha) {
   ctx.save();
   ctx.font = font;
   ctx.globalAlpha = alpha;
@@ -451,11 +495,26 @@ function drawDecorRow(emojis, parallax, spacing, baseY, yJitter, font, alpha) {
     const slot = Math.round((x + offset) / spacing);
     const seed = Math.sin(slot * 12.9898) * 43758.5453;
     const frac = seed - Math.floor(seed);
-    const emoji = emojis[Math.abs(slot) % emojis.length];
+    const item = items[Math.abs(slot) % items.length];
     const y = baseY + (frac - 0.5) * yJitter;
-    ctx.fillText(emoji, x, y);
+    drawDecorItem(item, x, y);
   }
   ctx.restore();
+}
+
+function drawDecorItem(item, x, y) {
+  if (typeof item === "string") {
+    ctx.fillText(item, x, y);
+    return;
+  }
+  const img = item.img;
+  if (img.complete && img.naturalWidth) {
+    const dh = 46;
+    const dw = (img.naturalWidth / img.naturalHeight) * dh;
+    ctx.drawImage(img, x, y - dh, dw, dh);
+  } else {
+    ctx.fillText(item.fallback, x, y);
+  }
 }
 
 function drawCloud(x, y) {
