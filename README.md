@@ -1,4 +1,4 @@
-# 🐹 Capy Kingdom Rush 🐼
+# 🦫 Capy Kingdom Rush 🐼
 
 Hop across crocodile backs and bamboo platforms as a capybara, panda, or capyanda hybrid, racing toward the Gate of Capyanda Kingdom. Don't fall in the water or bonk an obstacle! Track your distance, speed, and score, then compare against your own past runs — and optionally add your score to a global leaderboard.
 
@@ -67,7 +67,7 @@ Firestore rules above are enough for a casual project, but a determined person c
 
 - Species and default/alternate look options live in `characters.js`.
 - To add more looks, drop a transparent-background PNG into `assets/characters/` (or `assets/crocs/` for platform art) and add its filename to the relevant array in `characters.js`.
-- The game currently ships with 3 species (Capybara 🐹, Panda 🐼, Capyanda 🌟), each with several selectable looks, plus 6 crocodile-back variants used at random for platforms.
+- The game currently ships with 3 species (Capybara 🦫, Panda 🐼, Capyanda 🌟), each with several selectable looks, plus 6 crocodile-back variants used at random for platforms.
 
 ## 🕹️ Gameplay & scoring notes
 
@@ -91,4 +91,4 @@ assets/characters/     capybara, panda & capyanda icons
 assets/crocs/          crocodile-back platform art
 ```
 
-Have fun hopping! 🐹🐼✨
+Have fun hopping! 🦫🐼✨

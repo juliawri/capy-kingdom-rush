@@ -5,7 +5,7 @@
 export const CHARACTERS = {
   capybara: {
     label: "Capybara",
-    emoji: "🐹",
+    emoji: "🦫",
     folder: "assets/characters/",
     defaultIcon: "capy3-removebg-preview.png",
     variants: [

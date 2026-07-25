@@ -18,12 +18,12 @@
 // ============================================================================
 
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyDT5FmS3PLNJfbQ2TkLkvhS00QpXRdeVvY",
+  authDomain: "capy-kingdom-rush.firebaseapp.com",
+  projectId: "capy-kingdom-rush",
+  storageBucket: "capy-kingdom-rush.firebasestorage.app",
+  messagingSenderId: "776419997791",
+  appId: "1:776419997791:web:0ed8cbf22b49aced3b83ea"
 };
 
 // Name of the Firestore collection that stores leaderboard entries.
