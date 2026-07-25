@@ -560,24 +560,28 @@ function drawTiles() {
     if (t.type === "croc") {
       const img = crocImages[t.crocIdx];
       const bob = Math.sin(scrollX * 0.01 + t.startX) * 3;
-      const h = Math.min(110, t.width * 0.62);
+      const h = 90;
       const w = t.width;
+      const topY = GROUND_Y - h / 2 + bob;
+
+      // solid backing spans the full tile so the entire hitbox always reads
+      // as safe platform, no matter how much (or little) of it the source
+      // art below ends up covering.
+      ctx.fillStyle = "#4a8f4a";
+      roundRect(x, topY, w, h, 12);
+      ctx.fill();
+
       if (img.complete && img.naturalWidth) {
-        // "cover" crop: the drawn image always fills the full w x h tile
-        // footprint exactly (no transparent side-padding), so the visible
-        // crocodile always matches the tile's collision bounds 1:1 —
-        // otherwise portrait/square art left safe-looking gaps that were
-        // actually water, and made the visual gap between crocs look wider
-        // than the jump physics actually required.
-        const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
-        const sw = w / scale;
-        const sh = h / scale;
-        const sx = (img.naturalWidth - sw) / 2;
-        const sy = (img.naturalHeight - sh) / 2;
-        ctx.drawImage(img, sx, sy, sw, sh, x, GROUND_Y - h / 2 + bob, w, h);
-      } else {
-        ctx.fillStyle = "#4a8f4a";
-        ctx.fillRect(x, GROUND_Y, w, 34);
+        // fit the whole crocodile within the tile height, preserving its
+        // native aspect ratio (no crop). Forcing a "cover" crop to an exact
+        // w x h box used to cut portrait/square source art down to a thin
+        // sliver of the actual image (looked zoomed in), while wide/landscape
+        // art barely got cropped and filled the whole tile (looked oversized)
+        // — same box, wildly different results depending on source shape.
+        const drawH = h;
+        const drawW = Math.min(w, drawH * (img.naturalWidth / img.naturalHeight));
+        const dx = x + (w - drawW) / 2;
+        ctx.drawImage(img, dx, topY, drawW, drawH);
       }
     } else {
       // bamboo platform
@@ -597,6 +601,11 @@ function drawTiles() {
     if (t.obstacle) {
       const ox = x + t.obstacle.offsetX;
       ctx.font = `24px ${EMOJI_FONT_STACK}`;
+      // fillStyle is otherwise whatever was last left on the context (e.g.
+      // the blue water gradient from drawWater()) — harmless when the emoji
+      // font renders full color, but on systems that fall back to a
+      // monochrome glyph it tinted obstacles a random leftover color.
+      ctx.fillStyle = "#000";
       ctx.fillText(t.obstacle.emoji, ox, GROUND_Y - 6);
     }
   }
