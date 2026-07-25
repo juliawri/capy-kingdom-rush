@@ -13,14 +13,14 @@ const PLAYER_H = 66;
 const PLAYER_HALF_W = PLAYER_W / 2;
 
 const GRAVITY = 1800;           // px/s^2
-const JUMP_VELOCITY = 620;      // px/s
+const JUMP_VELOCITY = 500;      // px/s
 const OBSTACLE_CLEAR_HEIGHT = 50; // must be airborne above this to clear an obstacle
 const OBSTACLE_H = 34;
 
 const PPM = 40;                 // pixels per "meter"
 const BASE_SPEED = 260;         // px/s at the start
-const MAX_SPEED = 640;          // px/s cap
-const SPEED_PER_METER = 0.35;   // how quickly speed ramps with distance
+const MAX_SPEED = 520;          // px/s cap
+const SPEED_PER_METER = 0.18;   // how quickly speed ramps with distance
 
 const GATE_DISTANCE_M = 2500;   // the "goal" of the game
 const GATE_BONUS = 250;
@@ -42,6 +42,10 @@ const variantRow = document.getElementById("variantRow");
 const playerNameInput = document.getElementById("playerNameInput");
 const startBtn = document.getElementById("startBtn");
 const backToMenuBtn = document.getElementById("backToMenuBtn");
+const howToPlayBtn = document.getElementById("howToPlayBtn");
+const howToPlayOverlay = document.getElementById("howToPlayOverlay");
+const closeHowToPlayBtn = document.getElementById("closeHowToPlayBtn");
+const gotItBtn = document.getElementById("gotItBtn");
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -175,16 +179,16 @@ function seedTiles() {
 function spawnTile(afterX) {
   const airTime = (2 * JUMP_VELOCITY) / GRAVITY;
   const jumpRange = speed * airTime;
-  const gapMax = Math.max(40, Math.min(220, jumpRange * 0.62));
-  const gap = Math.random() < 0.78 ? 30 + Math.random() * (gapMax - 30) : 0;
-  const width = 90 + Math.random() * 90;
+  const gapMax = Math.max(30, Math.min(150, jumpRange * 0.4));
+  const gap = Math.random() < 0.5 ? 20 + Math.random() * (gapMax - 20) : 0;
+  const width = 160 + Math.random() * 130;
   const type = Math.random() < 0.55 ? "croc" : "bamboo";
   const startX = afterX + gap;
 
   const distanceMeters = scrollX / PPM;
-  const obstacleChance = Math.min(0.4, 0.1 + distanceMeters / 8000);
+  const obstacleChance = Math.min(0.22, 0.05 + distanceMeters / 14000);
   let obstacle = null;
-  if (width > 110 && Math.random() < obstacleChance) {
+  if (width > 150 && Math.random() < obstacleChance) {
     const w = OBSTACLE_H;
     const offsetX = 24 + Math.random() * Math.max(10, width - 48 - w);
     obstacle = { emoji: OBSTACLE_EMOJIS[Math.floor(Math.random() * OBSTACLE_EMOJIS.length)], offsetX, w };
@@ -646,6 +650,16 @@ startBtn.addEventListener("click", () => {
   screenMenu.hidden = true;
   screenGame.hidden = false;
   startRun();
+});
+
+howToPlayBtn.addEventListener("click", () => {
+  howToPlayOverlay.hidden = false;
+});
+closeHowToPlayBtn.addEventListener("click", () => {
+  howToPlayOverlay.hidden = true;
+});
+gotItBtn.addEventListener("click", () => {
+  howToPlayOverlay.hidden = true;
 });
 
 backToMenuBtn.addEventListener("click", () => {

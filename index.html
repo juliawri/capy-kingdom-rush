@@ -18,6 +18,7 @@
         <p>✨ Hop across crocs &amp; bamboo to reach the Gate of Capyanda Kingdom! ✨</p>
       </div>
       <div class="nav-links">
+        <button class="btn ghost" id="howToPlayBtn">❓ How to Play</button>
         <a class="btn ghost" href="leaderboard.html">🏆 Global Leaderboard</a>
       </div>
     </div>
@@ -39,7 +40,7 @@
       <div class="start-row">
         <button class="btn big" id="startBtn">🚀 Start Hopping!</button>
       </div>
-      <p class="fine-note">Press <b>Space</b> / <b>↑</b> or tap the game to jump. Land on 🪵 bamboo or 🐊 crocs — don't splash into the water or bonk an obstacle!</p>
+      <p class="fine-note">Press <b>Space</b> / <b>↑</b> or tap the game to jump. Land on 🎋 bamboo or 🐊 crocs — don't splash into the water or bonk an obstacle!</p>
     </div>
   </section>
 
@@ -68,6 +69,26 @@
       <div class="tip-toast" id="tipToast" style="opacity:0;">Get ready...</div>
     </div>
   </section>
+</div>
+
+<!-- ============ HOW TO PLAY MODAL ============ -->
+<div class="overlay" id="howToPlayOverlay" hidden>
+  <div class="modal">
+    <button class="modal-close" id="closeHowToPlayBtn">✕</button>
+    <h2>❓ How to Play</h2>
+    <p style="font-weight:700; margin-top:-8px;">Hop across the river to reach the Gate of Capyanda Kingdom!</p>
+    <ul class="personal-list" style="list-style:none;">
+      <li><span>⌨️ <b>Space</b> / <b>↑</b> / <b>W</b> or tap the game — jump</span></li>
+      <li><span>🎋 Land on bamboo platforms or 🐊 crocs to stay dry</span></li>
+      <li><span>💦 Falling in the water ends your run</span></li>
+      <li><span>⚠️ Jump over obstacles like 🪨 🕸️ 🦂 🔥 🐝 — bonking one ends your run</span></li>
+      <li><span>📏 The farther you go, the faster you get — reach 2500m to hit the Gate!</span></li>
+      <li><span>⭐ Score comes from distance, speed, and clean landings</span></li>
+    </ul>
+    <div class="modal-actions">
+      <button class="btn" id="gotItBtn">👍 Got it!</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============ GAME OVER MODAL ============ -->
