@@ -54,6 +54,10 @@ export const CROC_VARIANTS = [
   "croc4-removebg-preview.png",
   "croc5-removebg-preview.png",
   "croc6-removebg-preview.png",
+  "croc7-removebg-preview.png",
+  "croc8-removebg-preview.png",
+  "croc9-removebg-preview.png",
+  "croc10-removebg-preview.png",
 ].map((f) => "assets/crocs/" + f);
 
 export function iconPath(species, filename) {

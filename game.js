@@ -14,8 +14,8 @@ const PLAYER_HALF_W = PLAYER_W / 2;
 
 const GRAVITY = 2400;           // px/s^2
 const JUMP_VELOCITY = 500;      // px/s
-const OBSTACLE_CLEAR_HEIGHT = 35; // must be airborne above this to clear an obstacle
-const OBSTACLE_H = 34;
+const OBSTACLE_CLEAR_HEIGHT = 22; // must be airborne above this to clear an obstacle
+const OBSTACLE_H = 22;
 
 const PPM = 40;                 // pixels per "meter"
 const BASE_SPEED = 260;         // px/s at the start
@@ -26,6 +26,11 @@ const GATE_DISTANCE_M = 2500;   // the "goal" of the game
 const GATE_BONUS = 250;
 
 const OBSTACLE_EMOJIS = ["🪨", "🕸️", "🦂", "🔥", "🐝"];
+
+// canvas text doesn't reliably fall back to a color-emoji font on its own the
+// way regular HTML text does, so every emoji-bearing ctx.font must list one
+// explicitly or the glyphs silently render blank on some systems/browsers.
+const EMOJI_FONT_STACK = "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif";
 
 const HISTORY_KEY = "capyKingdomRush_history";
 const LAST_NAME_KEY = "capyKingdomRush_lastName";
@@ -421,7 +426,7 @@ function drawBackground() {
   }
 
   // capybara & panda friends lounging on the hills
-  drawDecorRow(BG_CRITTER_EMOJIS, 0.25, 230, GROUND_Y - 40, 14, "26px sans-serif", 0.95);
+  drawDecorRow(BG_CRITTER_EMOJIS, 0.25, 230, GROUND_Y - 40, 14, `26px ${EMOJI_FONT_STACK}`, 0.95);
 
   // parallax clouds
   ctx.fillStyle = "rgba(255,255,255,0.85)";
@@ -432,7 +437,7 @@ function drawBackground() {
   }
 
   // fluttering nature emoji drifting through the sky
-  drawDecorRow(BG_SKY_EMOJIS, 0.13, 190, 95, 90, "22px sans-serif", 0.8);
+  drawDecorRow(BG_SKY_EMOJIS, 0.13, 190, 95, 90, `22px ${EMOJI_FONT_STACK}`, 0.8);
 }
 
 // deterministic per-slot decoration: same world position always renders the same
@@ -481,7 +486,7 @@ function drawWater() {
     ctx.stroke();
   }
 
-  ctx.font = "20px sans-serif";
+  ctx.font = `20px ${EMOJI_FONT_STACK}`;
   const waveOffset = (scrollX * 0.6) % 260;
   for (let x = -waveOffset; x < CANVAS_W; x += 260) {
     ctx.fillText("🌊", x + 40, GROUND_Y + 70);
@@ -499,10 +504,18 @@ function drawTiles() {
       const h = Math.min(110, t.width * 0.62);
       const w = t.width;
       if (img.complete && img.naturalWidth) {
-        const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-        const dw = img.naturalWidth * scale;
-        const dh = img.naturalHeight * scale;
-        ctx.drawImage(img, x + (w - dw) / 2, GROUND_Y - dh / 2 + bob, dw, dh);
+        // "cover" crop: the drawn image always fills the full w x h tile
+        // footprint exactly (no transparent side-padding), so the visible
+        // crocodile always matches the tile's collision bounds 1:1 —
+        // otherwise portrait/square art left safe-looking gaps that were
+        // actually water, and made the visual gap between crocs look wider
+        // than the jump physics actually required.
+        const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+        const sw = w / scale;
+        const sh = h / scale;
+        const sx = (img.naturalWidth - sw) / 2;
+        const sy = (img.naturalHeight - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, x, GROUND_Y - h / 2 + bob, w, h);
       } else {
         ctx.fillStyle = "#4a8f4a";
         ctx.fillRect(x, GROUND_Y, w, 34);
@@ -515,7 +528,7 @@ function drawTiles() {
       ctx.fillStyle = "#c39a4f";
       roundRect(x, GROUND_Y, t.width, 10, 6);
       ctx.fill();
-      ctx.font = "26px sans-serif";
+      ctx.font = `26px ${EMOJI_FONT_STACK}`;
       const count = Math.max(1, Math.floor(t.width / 55));
       for (let i = 0; i < count; i++) {
         ctx.fillText("🎋", x + 10 + i * 55, GROUND_Y - 4);
@@ -524,7 +537,7 @@ function drawTiles() {
 
     if (t.obstacle) {
       const ox = x + t.obstacle.offsetX;
-      ctx.font = "30px sans-serif";
+      ctx.font = `24px ${EMOJI_FONT_STACK}`;
       ctx.fillText(t.obstacle.emoji, ox, GROUND_Y - 6);
     }
   }
@@ -569,7 +582,7 @@ function drawPlayer() {
 }
 
 function drawParticles() {
-  ctx.font = "24px sans-serif";
+  ctx.font = `24px ${EMOJI_FONT_STACK}`;
   particles.forEach((p) => {
     ctx.globalAlpha = Math.max(0, p.life);
     ctx.fillText(p.text, p.x, p.y);
