@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🏆 Leaderboard — Capy Kingdom Rush</title>
+<link rel="icon" href="assets/characters/capyanda3-removebg-preview.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="title-block">
+      <h1>🏆 Capyanda Kingdom Hall of Fame</h1>
+      <p>The fastest, farthest-hopping capys &amp; pandas of all time ✨</p>
+    </div>
+    <div class="nav-links">
+      <a class="btn" href="index.html">🎮 Play the Game</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="lbContent" class="lb-status">⏳ Loading leaderboard...</div>
+  </div>
+
+  <p class="footer-note">🐹🐼 Capy Kingdom Rush — hop toward the gate, one bounce at a time.</p>
+</div>
+
+<script type="module">
+  import { fetchLeaderboard } from "./leaderboard-db.js";
+  import { CHARACTERS } from "./characters.js";
+
+  const el = document.getElementById("lbContent");
+
+  function speciesEmoji(species) {
+    return CHARACTERS[species]?.emoji || "🐾";
+  }
+
+  function medal(rank) {
+    if (rank === 1) return { cls: "top1", icon: "🥇" };
+    if (rank === 2) return { cls: "top2", icon: "🥈" };
+    if (rank === 3) return { cls: "top3", icon: "🥉" };
+    return { cls: "", icon: "#" + rank };
+  }
+
+  async function render() {
+    const result = await fetchLeaderboard();
+
+    if (!result.ok) {
+      el.innerHTML = `
+        <div class="lb-empty">
+          🚧 The global leaderboard isn't connected yet.
+          <div class="setup-banner">
+            To turn it on, open <b>firebase-config.js</b> in this project and paste in your
+            Firebase project's config — full steps are in <b>README.md</b>. Until then, everyone's
+            scores are just saved on their own device. 🐹
+          </div>
+        </div>`;
+      return;
+    }
+
+    if (!result.entries.length) {
+      el.innerHTML = `<div class="lb-empty">🌱 No scores yet — be the first hopper on the board!</div>`;
+      return;
+    }
+
+    const rows = result.entries
+      .map((e, i) => {
+        const m = medal(i + 1);
+        const when = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleDateString() : "";
+        return `
+          <tr>
+            <td class="lb-rank ${m.cls}">${m.icon}</td>
+            <td>${speciesEmoji(e.species)} ${escapeHtml(e.name || "Hopper")}</td>
+            <td>⭐ ${e.score ?? 0}</td>
+            <td>📏 ${e.distance ?? 0}m</td>
+            <td>💨 ${e.topSpeed ?? 0} m/s</td>
+            <td style="color:#9a8ac0; font-weight:600;">${when}</td>
+          </tr>`;
+      })
+      .join("");
+
+    el.innerHTML = `
+      <table class="lb-table">
+        <thead>
+          <tr><th>Rank</th><th>Hopper</th><th>Score</th><th>Distance</th><th>Top Speed</th><th>Date</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  render();
+</script>
+</body>
+</html>

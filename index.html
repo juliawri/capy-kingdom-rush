@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>🐹🐼 Capy Kingdom Rush</title>
+<link rel="icon" href="assets/characters/capyanda3-removebg-preview.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ MENU / CHARACTER SELECT ============ -->
+  <section id="screen-menu">
+    <div class="topbar">
+      <div class="title-block">
+        <h1>🐹 Capy Kingdom Rush 🐼</h1>
+        <p>✨ Hop across crocs &amp; bamboo to reach the Gate of Capyanda Kingdom! ✨</p>
+      </div>
+      <div class="nav-links">
+        <a class="btn ghost" href="leaderboard.html">🏆 Global Leaderboard</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">🎮 Choose your hopper!</h2>
+      <div class="species-grid" id="speciesGrid"></div>
+
+      <div id="variantWrap">
+        <h3 style="text-align:center; margin-bottom:6px;">🎨 Customize your look</h3>
+        <div class="variant-row" id="variantRow"></div>
+      </div>
+
+      <div class="name-input-row">
+        <label for="playerNameInput" style="font-weight:800;">📛 Your name:</label>
+        <input type="text" id="playerNameInput" maxlength="18" placeholder="CapyHero" />
+      </div>
+
+      <div class="start-row">
+        <button class="btn big" id="startBtn">🚀 Start Hopping!</button>
+      </div>
+      <p class="fine-note">Press <b>Space</b> / <b>↑</b> or tap the game to jump. Land on 🪵 bamboo or 🐊 crocs — don't splash into the water or bonk an obstacle!</p>
+    </div>
+  </section>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <section id="screen-game" hidden>
+    <div class="topbar">
+      <div class="title-block">
+        <h1 style="font-size:1.6rem;">🐹 Capy Kingdom Rush 🐼</h1>
+      </div>
+      <div class="nav-links">
+        <button class="btn ghost" id="backToMenuBtn">🏠 Change Hopper</button>
+      </div>
+    </div>
+
+    <div class="game-frame">
+      <canvas id="gameCanvas" width="900" height="420"></canvas>
+      <div class="hud">
+        <div class="pill">📏 <span id="hudDistance">0</span> m</div>
+        <div class="pill">💨 <span id="hudSpeed">0</span> m/s</div>
+        <div class="pill">⭐ <span id="hudScore">0</span></div>
+      </div>
+      <div class="gate-bar-wrap">
+        <div class="gate-label" id="gateLabel">🏯 Gate of Capyanda Kingdom: 0 / 2500m</div>
+        <div class="gate-bar-bg"><div class="gate-bar-fill" id="gateBarFill"></div></div>
+      </div>
+      <div class="tip-toast" id="tipToast" style="opacity:0;">Get ready...</div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ GAME OVER MODAL ============ -->
+<div class="overlay" id="gameOverOverlay" hidden>
+  <div class="modal">
+    <button class="modal-close" id="closeModalBtn">✕</button>
+    <h2 id="gameOverTitle">💥 Game Over!</h2>
+    <p id="gameOverReason" style="font-weight:700; margin-top:-8px;"></p>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num" id="statScore">0</div><div class="lbl">⭐ Score</div></div>
+      <div class="stat-box"><div class="num" id="statDistance">0</div><div class="lbl">📏 Distance (m)</div></div>
+      <div class="stat-box"><div class="num" id="statSpeed">0</div><div class="lbl">💨 Top Speed (m/s)</div></div>
+      <div class="stat-box"><div class="num" id="statTime">0</div><div class="lbl">⏱️ Time (s)</div></div>
+    </div>
+
+    <div class="compare-box" id="compareBox">🎉 Nice first hop!</div>
+    <ul class="personal-list" id="personalList"></ul>
+
+    <div class="name-input-row" style="margin: 18px 0 4px;">
+      <label for="rename-input" style="font-weight:800;">📛 Display name:</label>
+      <input type="text" id="rename-input" maxlength="18" />
+    </div>
+
+    <div class="leaderboard-toggle" id="leaderboardToggleWrap">
+      <input type="checkbox" id="submitToLeaderboardChk" />
+      <label for="submitToLeaderboardChk">🌍 Add my score to the Global Leaderboard</label>
+    </div>
+    <p class="fine-note" id="firebaseNote"></p>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="submitScoreBtn">📤 Submit Score</button>
+    </div>
+    <p class="fine-note" id="submitStatus"></p>
+
+    <div class="modal-actions">
+      <button class="btn" id="playAgainBtn">🔁 Play Again</button>
+      <button class="btn secondary" id="viewLeaderboardBtn">🏆 Leaderboard</button>
+      <button class="btn ghost" id="changeHopperBtn">🏠 Change Hopper</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
