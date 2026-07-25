@@ -12,9 +12,9 @@ const PLAYER_W = 66;
 const PLAYER_H = 66;
 const PLAYER_HALF_W = PLAYER_W / 2;
 
-const GRAVITY = 1800;           // px/s^2
+const GRAVITY = 2400;           // px/s^2
 const JUMP_VELOCITY = 500;      // px/s
-const OBSTACLE_CLEAR_HEIGHT = 50; // must be airborne above this to clear an obstacle
+const OBSTACLE_CLEAR_HEIGHT = 35; // must be airborne above this to clear an obstacle
 const OBSTACLE_H = 34;
 
 const PPM = 40;                 // pixels per "meter"
@@ -181,8 +181,8 @@ function spawnTile(afterX) {
   const jumpRange = speed * airTime;
   const gapMax = Math.max(30, Math.min(150, jumpRange * 0.4));
   const gap = Math.random() < 0.5 ? 20 + Math.random() * (gapMax - 20) : 0;
-  const width = 160 + Math.random() * 130;
   const type = Math.random() < 0.55 ? "croc" : "bamboo";
+  const width = type === "croc" ? 220 + Math.random() * 160 : 160 + Math.random() * 130;
   const startX = afterX + gap;
 
   const distanceMeters = scrollX / PPM;
@@ -400,6 +400,9 @@ function render() {
   drawPlayer();
 }
 
+const BG_CRITTER_EMOJIS = ["🦫", "🐼", "🐼", "🦫"];
+const BG_SKY_EMOJIS = ["🦋", "🍃", "🌸", "🐦", "🌺", "🍀"];
+
 function drawBackground() {
   const g = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
   g.addColorStop(0, "#8fe3ff");
@@ -417,6 +420,9 @@ function drawBackground() {
     ctx.fill();
   }
 
+  // capybara & panda friends lounging on the hills
+  drawDecorRow(BG_CRITTER_EMOJIS, 0.25, 230, GROUND_Y - 40, 14, "26px sans-serif", 0.95);
+
   // parallax clouds
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   const cloudOffset = (scrollX * 0.08) % 400;
@@ -424,6 +430,27 @@ function drawBackground() {
     drawCloud(x + 80, 60);
     drawCloud(x + 260, 110);
   }
+
+  // fluttering nature emoji drifting through the sky
+  drawDecorRow(BG_SKY_EMOJIS, 0.13, 190, 95, 90, "22px sans-serif", 0.8);
+}
+
+// deterministic per-slot decoration: same world position always renders the same
+// emoji/y-offset, so nothing jitters or reshuffles frame to frame as it scrolls by
+function drawDecorRow(emojis, parallax, spacing, baseY, yJitter, font, alpha) {
+  ctx.save();
+  ctx.font = font;
+  ctx.globalAlpha = alpha;
+  const offset = (scrollX * parallax) % spacing;
+  for (let x = -offset - spacing; x < CANVAS_W + spacing; x += spacing) {
+    const slot = Math.round((x + offset) / spacing);
+    const seed = Math.sin(slot * 12.9898) * 43758.5453;
+    const frac = seed - Math.floor(seed);
+    const emoji = emojis[Math.abs(slot) % emojis.length];
+    const y = baseY + (frac - 0.5) * yJitter;
+    ctx.fillText(emoji, x, y);
+  }
+  ctx.restore();
 }
 
 function drawCloud(x, y) {
@@ -469,7 +496,7 @@ function drawTiles() {
     if (t.type === "croc") {
       const img = crocImages[t.crocIdx];
       const bob = Math.sin(scrollX * 0.01 + t.startX) * 3;
-      const h = Math.min(70, t.width * 0.55);
+      const h = Math.min(110, t.width * 0.62);
       const w = t.width;
       if (img.complete && img.naturalWidth) {
         const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
