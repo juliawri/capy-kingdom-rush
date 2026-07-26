@@ -139,89 +139,10 @@ buildVariantRow();
 // ============================================================================
 //  IMAGE PRELOADING
 // ============================================================================
-// the "-removebg" source art is a full-size canvas with the crocodile cut out
-// on a transparent background, often with lots of empty margin around it (or
-// stray background debris like reeds/grass the cutout tool missed) — so the
-// image's raw pixel dimensions don't reflect how big/how-shaped the
-// crocodile actually is. Scanning the alpha channel for the largest
-// connected opaque blob (the crocodile itself is always far bigger than any
-// leftover debris, which survives as small isolated islands) gives the real
-// subject bounds to crop/scale against instead.
-function computeOpaqueBounds(img) {
-  const w = img.naturalWidth, h = img.naturalHeight;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const c = canvas.getContext("2d");
-  c.drawImage(img, 0, 0);
-  let data;
-  try {
-    data = c.getImageData(0, 0, w, h).data;
-  } catch (e) {
-    return null;
-  }
-  const opaque = new Uint8Array(w * h);
-  for (let i = 0; i < w * h; i++) opaque[i] = data[i * 4 + 3] > 10 ? 1 : 0;
-
-  const visited = new Uint8Array(w * h);
-  const stack = new Int32Array(w * h);
-  let best = null;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const idx = y * w + x;
-      if (!opaque[idx] || visited[idx]) continue;
-      let sp = 0;
-      stack[sp++] = idx;
-      visited[idx] = 1;
-      let minX = x, maxX = x, minY = y, maxY = y, count = 0;
-      while (sp > 0) {
-        const cur = stack[--sp];
-        const cx = cur % w, cy = (cur / w) | 0;
-        count++;
-        if (cx < minX) minX = cx;
-        if (cx > maxX) maxX = cx;
-        if (cy < minY) minY = cy;
-        if (cy > maxY) maxY = cy;
-        if (cx > 0 && opaque[cur - 1] && !visited[cur - 1]) { visited[cur - 1] = 1; stack[sp++] = cur - 1; }
-        if (cx < w - 1 && opaque[cur + 1] && !visited[cur + 1]) { visited[cur + 1] = 1; stack[sp++] = cur + 1; }
-        if (cy > 0 && opaque[cur - w] && !visited[cur - w]) { visited[cur - w] = 1; stack[sp++] = cur - w; }
-        if (cy < h - 1 && opaque[cur + w] && !visited[cur + w]) { visited[cur + w] = 1; stack[sp++] = cur + w; }
-      }
-      if (!best || count > best.count) {
-        best = { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1, count };
-      }
-    }
-  }
-  return best;
-}
-
-// manual per-image nudges layered on top of the automatic bounds, for cases
-// where the auto-detected box is technically tight to the opaque pixels but
-// still reads as leaving too much of a particular source photo on-screen.
-const CROC_CROP_ADJUST = {
-};
-
-function applyCropAdjust(box, adjust) {
-  if (!box || !adjust) return box;
-  const trimLeft = box.w * (adjust.trimLeft || 0);
-  const trimRight = box.w * (adjust.trimRight || 0);
-  const trimTop = box.h * (adjust.trimTop || 0);
-  const trimBottom = box.h * (adjust.trimBottom || 0);
-  return {
-    x: box.x + trimLeft,
-    y: box.y + trimTop,
-    w: box.w - trimLeft - trimRight,
-    h: box.h - trimTop - trimBottom,
-  };
-}
-
+// the source art is manually cropped ahead of time, so the raw image bounds
+// are used as-is with no automatic crop/trim pass.
 const crocImages = CROC_VARIANTS.map((src) => {
   const img = new Image();
-  img.cropBox = null;
-  img.addEventListener("load", () => {
-    const box = computeOpaqueBounds(img);
-    img.cropBox = applyCropAdjust(box, CROC_CROP_ADJUST[src.split("/").pop()]);
-  });
   img.src = src;
   return img;
 });
@@ -682,12 +603,7 @@ function drawTiles() {
       const bob = Math.sin(scrollX * 0.01 + t.startX) * 3;
       const w = t.width;
       if (img.complete && img.naturalWidth) {
-        // crop against the crocodile's actual opaque pixel bounds, not the
-        // full (often mostly-transparent-margin) source canvas — otherwise
-        // an image where the croc only fills a small part of the frame gets
-        // treated as if the whole frame were "the croc," throwing off both
-        // the apparent size and how much of it gets cropped.
-        const b = img.cropBox || { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
+        const b = { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
         // contain-fit: scale so the WHOLE crocodile is always visible (never
         // cropped), capped at a reasonable platform height. A "cover" fit
         // that forced the image to fill the tile's exact w x h box used to
