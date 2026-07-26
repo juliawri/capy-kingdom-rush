@@ -634,8 +634,11 @@ function drawTiles() {
         // chop off heads/tails on diagonal poses and shapes whose aspect
         // ratio didn't match the tile — there's no backing box anymore to
         // fill, so any width the croc doesn't reach just shows water, which
-        // reads fine.
-        const h = Math.min(150, w * (b.h / b.w));
+        // reads fine. Allow the sprite to run up to 25% wider than the tile's
+        // own collision width so it can overhang the water a bit at the
+        // edges instead of always being squeezed to fit flush inside it.
+        const maxW = w * 1.25;
+        const h = Math.min(150, maxW * (b.h / b.w));
         const drawW = h * (b.w / b.h);
         const topY = GROUND_Y - h / 2 + bob;
         const dx = x + (w - drawW) / 2;
