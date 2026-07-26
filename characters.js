@@ -49,8 +49,6 @@ export const CHARACTERS = {
 // Crocodile-back platform art (randomly picked per platform tile)
 export const CROC_VARIANTS = [
   "croc1-removebg-preview.png",
-  "croc2-removebg-preview.png",
-  "croc3-removebg-preview.png",
   "croc4-removebg-preview.png",
   "croc5-removebg-preview.png",
   "croc6-removebg-preview.png",

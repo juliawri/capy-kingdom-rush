@@ -138,35 +138,59 @@ buildVariantRow();
 //  IMAGE PRELOADING
 // ============================================================================
 // the "-removebg" source art is a full-size canvas with the crocodile cut out
-// on a transparent background, often with lots of empty margin around it —
-// so the image's raw pixel dimensions don't reflect how big/how-shaped the
-// crocodile actually is. Scanning the alpha channel for the opaque region
-// gives the real subject bounds to crop/scale against instead.
+// on a transparent background, often with lots of empty margin around it (or
+// stray background debris like reeds/grass the cutout tool missed) — so the
+// image's raw pixel dimensions don't reflect how big/how-shaped the
+// crocodile actually is. Scanning the alpha channel for the largest
+// connected opaque blob (the crocodile itself is always far bigger than any
+// leftover debris, which survives as small isolated islands) gives the real
+// subject bounds to crop/scale against instead.
 function computeOpaqueBounds(img) {
+  const w = img.naturalWidth, h = img.naturalHeight;
   const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
+  canvas.width = w;
+  canvas.height = h;
   const c = canvas.getContext("2d");
   c.drawImage(img, 0, 0);
   let data;
   try {
-    data = c.getImageData(0, 0, canvas.width, canvas.height).data;
+    data = c.getImageData(0, 0, w, h).data;
   } catch (e) {
     return null;
   }
-  let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
-  for (let y = 0; y < canvas.height; y++) {
-    for (let x = 0; x < canvas.width; x++) {
-      if (data[(y * canvas.width + x) * 4 + 3] > 10) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+  const opaque = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) opaque[i] = data[i * 4 + 3] > 10 ? 1 : 0;
+
+  const visited = new Uint8Array(w * h);
+  const stack = new Int32Array(w * h);
+  let best = null;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      if (!opaque[idx] || visited[idx]) continue;
+      let sp = 0;
+      stack[sp++] = idx;
+      visited[idx] = 1;
+      let minX = x, maxX = x, minY = y, maxY = y, count = 0;
+      while (sp > 0) {
+        const cur = stack[--sp];
+        const cx = cur % w, cy = (cur / w) | 0;
+        count++;
+        if (cx < minX) minX = cx;
+        if (cx > maxX) maxX = cx;
+        if (cy < minY) minY = cy;
+        if (cy > maxY) maxY = cy;
+        if (cx > 0 && opaque[cur - 1] && !visited[cur - 1]) { visited[cur - 1] = 1; stack[sp++] = cur - 1; }
+        if (cx < w - 1 && opaque[cur + 1] && !visited[cur + 1]) { visited[cur + 1] = 1; stack[sp++] = cur + 1; }
+        if (cy > 0 && opaque[cur - w] && !visited[cur - w]) { visited[cur - w] = 1; stack[sp++] = cur - w; }
+        if (cy < h - 1 && opaque[cur + w] && !visited[cur + w]) { visited[cur + w] = 1; stack[sp++] = cur + w; }
+      }
+      if (!best || count > best.count) {
+        best = { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1, count };
       }
     }
   }
-  if (maxX < minX || maxY < minY) return null;
-  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+  return best;
 }
 
 const crocImages = CROC_VARIANTS.map((src) => {
@@ -604,18 +628,18 @@ function drawTiles() {
         // treated as if the whole frame were "the croc," throwing off both
         // the apparent size and how much of it gets cropped.
         const b = img.cropBox || { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
-        // pick the display height this crocodile would need to show its
-        // full body across the tile's width with zero crop, then clamp to a
-        // reasonable platform-height range.
-        const idealH = w * (b.h / b.w);
-        const h = Math.max(60, Math.min(150, idealH));
+        // contain-fit: scale so the WHOLE crocodile is always visible (never
+        // cropped), capped at a reasonable platform height. A "cover" fit
+        // that forced the image to fill the tile's exact w x h box used to
+        // chop off heads/tails on diagonal poses and shapes whose aspect
+        // ratio didn't match the tile — there's no backing box anymore to
+        // fill, so any width the croc doesn't reach just shows water, which
+        // reads fine.
+        const h = Math.min(150, w * (b.h / b.w));
+        const drawW = h * (b.w / b.h);
         const topY = GROUND_Y - h / 2 + bob;
-        const scale = Math.max(w / b.w, h / b.h);
-        const sw = w / scale;
-        const sh = h / scale;
-        const sx = b.x + (b.w - sw) / 2;
-        const sy = b.y + (b.h - sh) / 2;
-        ctx.drawImage(img, sx, sy, sw, sh, x, topY, w, h);
+        const dx = x + (w - drawW) / 2;
+        ctx.drawImage(img, b.x, b.y, b.w, b.h, dx, topY, drawW, h);
       } else {
         ctx.fillStyle = "#4a8f4a";
         ctx.fillRect(x, GROUND_Y, w, 34);
