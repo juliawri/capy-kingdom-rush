@@ -758,10 +758,14 @@ function endGame(reason, emoji) {
   };
   history.push(record);
   history.sort((a, b) => b.score - a.score);
+  // rank must be computed before truncating — once history is at capacity, a
+  // bad run gets sorted to the bottom and trimmed off before it's ever found
+  // in the saved list, which turned into "rank #0 out of 50" below.
+  const rank = history.findIndex((r) => r.ts === record.ts) + 1;
   const trimmed = history.slice(0, HISTORY_MAX);
   saveHistory(trimmed);
 
-  renderComparison(trimmed, record);
+  renderComparison(trimmed, record, rank);
 
   renameInput.value = playerNameInput.value || record.name;
 
@@ -788,13 +792,15 @@ function saveHistory(list) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
 }
 
-function renderComparison(history, record) {
-  const rank = history.findIndex((r) => r.ts === record.ts) + 1;
+function renderComparison(history, record, rank) {
   const isBest = rank === 1;
+  const madeCut = rank > 0 && rank <= history.length;
   if (history.length === 1) {
     compareBox.textContent = "🎉 Nice first hop! Play again to set a personal best.";
   } else if (isBest) {
     compareBox.textContent = `🏆 New personal best! You beat your old record of ${history[1]?.score ?? 0}!`;
+  } else if (!madeCut) {
+    compareBox.textContent = `📉 This run didn't crack your top ${HISTORY_MAX} — your best is ${history[0].score}!`;
   } else {
     compareBox.textContent = `🎯 That's rank #${rank} out of ${history.length} of your runs. Your best is ${history[0].score}!`;
   }
