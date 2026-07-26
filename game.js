@@ -200,18 +200,29 @@ function computeOpaqueBounds(img) {
 // still reads as leaving too much of a particular source photo on-screen.
 const CROC_CROP_ADJUST = {
   "croc5-removebg-preview.png": { trimRight: 0.08 },
+  "croc10-removebg-preview.png": { trimRight: 0.08, trimBottom: 0.08 },
 };
+
+function applyCropAdjust(box, adjust) {
+  if (!box || !adjust) return box;
+  const trimLeft = box.w * (adjust.trimLeft || 0);
+  const trimRight = box.w * (adjust.trimRight || 0);
+  const trimTop = box.h * (adjust.trimTop || 0);
+  const trimBottom = box.h * (adjust.trimBottom || 0);
+  return {
+    x: box.x + trimLeft,
+    y: box.y + trimTop,
+    w: box.w - trimLeft - trimRight,
+    h: box.h - trimTop - trimBottom,
+  };
+}
 
 const crocImages = CROC_VARIANTS.map((src) => {
   const img = new Image();
   img.cropBox = null;
   img.addEventListener("load", () => {
-    let box = computeOpaqueBounds(img);
-    const adjust = CROC_CROP_ADJUST[src.split("/").pop()];
-    if (box && adjust?.trimRight) {
-      box = { ...box, w: box.w * (1 - adjust.trimRight) };
-    }
-    img.cropBox = box;
+    const box = computeOpaqueBounds(img);
+    img.cropBox = applyCropAdjust(box, CROC_CROP_ADJUST[src.split("/").pop()]);
   });
   img.src = src;
   return img;
@@ -682,6 +693,14 @@ function drawTiles() {
 
     if (t.obstacle) {
       const ox = x + t.obstacle.offsetX;
+
+      // red box around the obstacle's actual collision bounds so it reads
+      // clearly as a hazard rather than blending in with the scenery emoji
+      const boxPad = 4;
+      ctx.strokeStyle = "#ff2d2d";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(ox - boxPad, GROUND_Y - 30, t.obstacle.w + boxPad * 2, 30);
+
       ctx.font = `24px ${EMOJI_FONT_STACK}`;
       // fillStyle is otherwise whatever was last left on the context (e.g.
       // the blue water gradient from drawWater()) — harmless when the emoji
@@ -707,11 +726,14 @@ function drawPlayer() {
   const py = GROUND_Y - jumpHeight - PLAYER_H;
   const tilt = Math.max(-0.35, Math.min(0.35, -velocity / 1800));
 
-  // shadow
+  // shadow — width matches PLAYER_HALF_W (the actual collision footprint),
+  // not an arbitrary smaller radius, so it visually hangs over an edge by the
+  // same up-to-25% (HAZARD_OVERHANG) the collision check actually allows
+  // instead of looking like it falls in far earlier than it really does.
   const shadowScale = Math.max(0.35, 1 - jumpHeight / 220);
   ctx.fillStyle = "rgba(20,30,20,0.25)";
   ctx.beginPath();
-  ctx.ellipse(PLAYER_SCREEN_X + PLAYER_HALF_W, GROUND_Y + 6, 26 * shadowScale, 8 * shadowScale, 0, 0, Math.PI * 2);
+  ctx.ellipse(PLAYER_SCREEN_X + PLAYER_HALF_W, GROUND_Y + 6, PLAYER_HALF_W * shadowScale, 8 * shadowScale, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.save();
