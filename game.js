@@ -857,6 +857,15 @@ canvas.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   jump();
 });
+// touchstart fallback alongside pointerdown: some mobile in-app browsers
+// (Instagram/TikTok/Facebook webviews, older Android WebViews) don't fire
+// Pointer Events reliably. jump() is a no-op unless grounded, so both
+// listeners firing for the same tap is harmless.
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  jump();
+}, { passive: false });
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
 playAgainBtn.addEventListener("click", () => {
   gameOverOverlay.hidden = true;

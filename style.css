@@ -30,6 +30,8 @@ html, body {
     linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-bottom) 100%);
   min-height: 100vh;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3, .display {
@@ -40,13 +42,18 @@ button {
   font-family: "Baloo 2", "Nunito", sans-serif;
   cursor: pointer;
   border: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, .species-card, .variant-thumb {
+  -webkit-touch-callout: none;
 }
 
 /* ---------- layout shells ---------- */
 .page {
   max-width: 980px;
   margin: 0 auto;
-  padding: 24px 18px 60px;
+  padding: calc(24px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
   position: relative;
 }
 
@@ -227,7 +234,10 @@ canvas#gameCanvas {
   display: block;
   width: 100%;
   height: auto;
-  touch-action: manipulation;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .hud {
