@@ -195,11 +195,23 @@ function computeOpaqueBounds(img) {
   return best;
 }
 
+// manual per-image nudges layered on top of the automatic bounds, for cases
+// where the auto-detected box is technically tight to the opaque pixels but
+// still reads as leaving too much of a particular source photo on-screen.
+const CROC_CROP_ADJUST = {
+  "croc5-removebg-preview.png": { trimRight: 0.08 },
+};
+
 const crocImages = CROC_VARIANTS.map((src) => {
   const img = new Image();
   img.cropBox = null;
   img.addEventListener("load", () => {
-    img.cropBox = computeOpaqueBounds(img);
+    let box = computeOpaqueBounds(img);
+    const adjust = CROC_CROP_ADJUST[src.split("/").pop()];
+    if (box && adjust?.trimRight) {
+      box = { ...box, w: box.w * (1 - adjust.trimRight) };
+    }
+    img.cropBox = box;
   });
   img.src = src;
   return img;
@@ -639,11 +651,12 @@ function drawTiles() {
         // chop off heads/tails on diagonal poses and shapes whose aspect
         // ratio didn't match the tile — there's no backing box anymore to
         // fill, so any width the croc doesn't reach just shows water, which
-        // reads fine. Allow the sprite to run up to 25% wider than the tile's
-        // own collision width so it can overhang the water a bit at the
-        // edges instead of always being squeezed to fit flush inside it.
-        const maxW = w * 1.25;
-        const h = Math.min(150, maxW * (b.h / b.w));
+        // reads fine. The sprite must never be drawn wider than the tile's
+        // own collision width, though — a visual overhang past the real
+        // hitbox reads as "I'm still standing on the croc" while the game
+        // logic (which only knows about the tile's actual width) disagrees
+        // and drops the player in the water, which feels like a cheated death.
+        const h = Math.min(150, w * (b.h / b.w));
         const drawW = h * (b.w / b.h);
         const topY = GROUND_Y - h / 2 + bob;
         const dx = x + (w - drawW) / 2;
