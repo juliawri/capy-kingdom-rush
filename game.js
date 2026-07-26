@@ -199,8 +199,6 @@ function computeOpaqueBounds(img) {
 // where the auto-detected box is technically tight to the opaque pixels but
 // still reads as leaving too much of a particular source photo on-screen.
 const CROC_CROP_ADJUST = {
-  "croc5-removebg-preview.png": { trimRight: 0.08 },
-  "croc10-removebg-preview.png": { trimRight: 0.08, trimBottom: 0.08, trimLeft: 0.06 },
 };
 
 function applyCropAdjust(box, adjust) {
