@@ -421,18 +421,34 @@ function checkCollisions() {
     // "grounded". Up to HAZARD_OVERHANG (25%) of the character's full width
     // is allowed to hang over the water before that counts against it.
     //
-    // this checks actual overlap against a single tile rather than sampling
+    // this checks actual overlap against solid ground rather than sampling
     // fixed left/right points — sampling could land both points on solid
     // ground while still failing to reflect a 25% overhang on landing: after
     // a jump, the landing spot is fixed by physics (not finely aimed by the
     // player), so it can land the character's center safely past a tile's
     // leading edge while the fixed sample point behind them still read as
     // "in the gap they just cleared," killing them despite a good landing.
+    //
+    // adjacent tiles with zero gap between them are merged into one span
+    // first — otherwise standing right on the seam between two back-to-back
+    // platforms only ever shows ~50% overlap with either tile alone (even
+    // though the ground is 100% continuous underfoot), incorrectly failing
+    // the 75% threshold.
     const left = centerX - PLAYER_HALF_W;
     const right = centerX + PLAYER_HALF_W;
     const neededCoverage = PLAYER_W * (1 - HAZARD_OVERHANG);
-    const wellGrounded = tiles.some((t) => {
-      const overlap = Math.min(right, t.startX + t.width) - Math.max(left, t.startX);
+    const spans = [];
+    for (const t of tiles) {
+      const s = t.startX, e = t.startX + t.width;
+      const last = spans[spans.length - 1];
+      if (last && s <= last.e + 0.01) {
+        last.e = Math.max(last.e, e);
+      } else {
+        spans.push({ s, e });
+      }
+    }
+    const wellGrounded = spans.some((sp) => {
+      const overlap = Math.min(right, sp.e) - Math.max(left, sp.s);
       return overlap >= neededCoverage;
     });
     if (!wellGrounded) {
