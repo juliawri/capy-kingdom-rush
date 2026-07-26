@@ -698,17 +698,27 @@ function drawTiles() {
       // filled red box around the obstacle's actual collision bounds so it
       // reads clearly as a hazard rather than blending in with the scenery
       const boxPad = 4;
+      const boxW = t.obstacle.w + boxPad * 2;
+      const boxH = 30;
+      const boxX = ox - boxPad;
+      const boxY = GROUND_Y - boxH;
       ctx.fillStyle = "#c41e1e";
-      roundRect(ox - boxPad, GROUND_Y - 30, t.obstacle.w + boxPad * 2, 30, 6);
+      roundRect(boxX, boxY, boxW, boxH, 6);
       ctx.fill();
 
-      ctx.font = `24px ${EMOJI_FONT_STACK}`;
+      // sized and centered to sit fully inside the box above (a full 24px
+      // emoji glyph ran wider/taller than the box and spilled past its edges)
+      ctx.font = `18px ${EMOJI_FONT_STACK}`;
       // fillStyle is otherwise whatever was last left on the context (e.g.
       // the blue water gradient from drawWater()) — harmless when the emoji
       // font renders full color, but on systems that fall back to a
       // monochrome glyph it tinted obstacles a random leftover color.
       ctx.fillStyle = "#000";
-      ctx.fillText(t.obstacle.emoji, ox, GROUND_Y - 6);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(t.obstacle.emoji, boxX + boxW / 2, boxY + boxH / 2);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
     }
   }
 }
