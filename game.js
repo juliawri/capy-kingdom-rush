@@ -13,7 +13,7 @@ const PLAYER_H = 66;
 const PLAYER_HALF_W = PLAYER_W / 2;
 
 const GRAVITY = 2400;           // px/s^2
-const JUMP_VELOCITY = 500;      // px/s
+const JUMP_VELOCITY = 560;      // px/s
 const OBSTACLE_CLEAR_HEIGHT = 22; // must be airborne above this to clear an obstacle
 const OBSTACLE_H = 16; // width of an obstacle's actual collision box
 const HAZARD_OVERHANG = 0.25; // max fraction of the character's width allowed to hang over water/an obstacle before it counts as a hit
@@ -199,7 +199,7 @@ function computeOpaqueBounds(img) {
 // where the auto-detected box is technically tight to the opaque pixels but
 // still reads as leaving too much of a particular source photo on-screen.
 const CROC_CROP_ADJUST = {
-  "croc4-removebg-preview.png": { trimLeft: 0.12 },
+  "croc4-removebg-preview.png": { trimLeft: 0.06 },
   "croc5-removebg-preview.png": { trimRight: 0.08 },
   "croc10-removebg-preview.png": { trimRight: 0.08, trimBottom: 0.08, trimLeft: 0.06 },
 };
@@ -415,14 +415,27 @@ function checkCollisions() {
   const tile = getTileAtWorldX(centerX);
 
   if (jumpHeight <= 0) {
-    // require both feet to be over solid ground, not just the center point —
-    // a center-only check let up to half the sprite hang visibly over water
-    // at a platform's edge while still counting as "grounded". Up to
-    // HAZARD_OVERHANG (25%) of the character's width is allowed to hang over
-    // the water before that counts against it.
-    const leftFoot = getTileAtWorldX(centerX - HAZARD_SAFE_HALF_W);
-    const rightFoot = getTileAtWorldX(centerX + HAZARD_SAFE_HALF_W);
-    if (!tile || !leftFoot || !rightFoot) {
+    // require most of the character to be over solid ground, not just the
+    // center point — a center-only check let up to half the sprite hang
+    // visibly over water at a platform's edge while still counting as
+    // "grounded". Up to HAZARD_OVERHANG (25%) of the character's full width
+    // is allowed to hang over the water before that counts against it.
+    //
+    // this checks actual overlap against a single tile rather than sampling
+    // fixed left/right points — sampling could land both points on solid
+    // ground while still failing to reflect a 25% overhang on landing: after
+    // a jump, the landing spot is fixed by physics (not finely aimed by the
+    // player), so it can land the character's center safely past a tile's
+    // leading edge while the fixed sample point behind them still read as
+    // "in the gap they just cleared," killing them despite a good landing.
+    const left = centerX - PLAYER_HALF_W;
+    const right = centerX + PLAYER_HALF_W;
+    const neededCoverage = PLAYER_W * (1 - HAZARD_OVERHANG);
+    const wellGrounded = tiles.some((t) => {
+      const overlap = Math.min(right, t.startX + t.width) - Math.max(left, t.startX);
+      return overlap >= neededCoverage;
+    });
+    if (!wellGrounded) {
       endGame("water");
       return;
     }
@@ -707,7 +720,7 @@ function drawTiles() {
       const boxH = 30;
       const boxX = ox - boxPad;
       const boxY = GROUND_Y - boxH;
-      ctx.fillStyle = "#c41e1e";
+      ctx.fillStyle = "#8b1414";
       roundRect(boxX, boxY, boxW, boxH, 6);
       ctx.fill();
 
