@@ -199,7 +199,6 @@ function computeOpaqueBounds(img) {
 // where the auto-detected box is technically tight to the opaque pixels but
 // still reads as leaving too much of a particular source photo on-screen.
 const CROC_CROP_ADJUST = {
-  "croc4-removebg-preview.png": { trimLeft: 0.06 },
   "croc5-removebg-preview.png": { trimRight: 0.08 },
   "croc10-removebg-preview.png": { trimRight: 0.08, trimBottom: 0.08, trimLeft: 0.06 },
 };
@@ -736,7 +735,7 @@ function drawTiles() {
       const boxH = 30;
       const boxX = ox - boxPad;
       const boxY = GROUND_Y - boxH;
-      ctx.fillStyle = "#8b1414";
+      ctx.fillStyle = "#5c0d0d";
       roundRect(boxX, boxY, boxW, boxH, 6);
       ctx.fill();
 
