@@ -15,7 +15,7 @@ const PLAYER_HALF_W = PLAYER_W / 2;
 const GRAVITY = 2400;           // px/s^2
 const JUMP_VELOCITY = 500;      // px/s
 const OBSTACLE_CLEAR_HEIGHT = 22; // must be airborne above this to clear an obstacle
-const OBSTACLE_H = 22;
+const OBSTACLE_H = 16; // width of an obstacle's actual collision box
 const HAZARD_OVERHANG = 0.25; // max fraction of the character's width allowed to hang over water/an obstacle before it counts as a hit
 const HAZARD_SAFE_HALF_W = PLAYER_HALF_W * (1 - HAZARD_OVERHANG);
 
@@ -694,12 +694,12 @@ function drawTiles() {
     if (t.obstacle) {
       const ox = x + t.obstacle.offsetX;
 
-      // red box around the obstacle's actual collision bounds so it reads
-      // clearly as a hazard rather than blending in with the scenery emoji
+      // filled red box around the obstacle's actual collision bounds so it
+      // reads clearly as a hazard rather than blending in with the scenery
       const boxPad = 4;
-      ctx.strokeStyle = "#ff2d2d";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(ox - boxPad, GROUND_Y - 30, t.obstacle.w + boxPad * 2, 30);
+      ctx.fillStyle = "#ff2d2d";
+      roundRect(ox - boxPad, GROUND_Y - 30, t.obstacle.w + boxPad * 2, 30, 6);
+      ctx.fill();
 
       ctx.font = `24px ${EMOJI_FONT_STACK}`;
       // fillStyle is otherwise whatever was last left on the context (e.g.
