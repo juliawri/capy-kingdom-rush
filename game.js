@@ -297,15 +297,20 @@ function spawnTile(afterX) {
   if (type === "croc" && Math.random() < obstacleChance) {
     // keep obstacles well clear of both tile edges. Too close to the leading
     // edge and a player who just landed from crossing the prior gap has no
-    // real reaction time before needing to jump again; too close to the
-    // trailing edge and clearing the obstacle forces a single jump that must
-    // also carry all the way across the next gap. Scale the margin with
-    // speed so it always covers a real ~0.3s reaction window.
-    const edgeMargin = Math.max(90, speed * 0.3);
+    // real reaction time before needing to jump again — scale that margin
+    // with speed so it always covers a real ~0.3s reaction window.
+    const leadMargin = Math.max(90, speed * 0.3);
+    // a jump always covers the same horizontal distance (jumpRange) once
+    // thrown, regardless of when it's pressed, so the trailing clearance
+    // must be at least that big — otherwise the jump that clears the
+    // obstacle can carry the player past this tile's end and into whatever
+    // gap comes after it (not decided yet at this point), dropping them in
+    // the water despite successfully clearing the obstacle.
+    const trailMargin = jumpRange;
     const w = OBSTACLE_H;
-    const maxOffset = width - edgeMargin - w;
-    if (maxOffset > edgeMargin) {
-      const offsetX = edgeMargin + Math.random() * (maxOffset - edgeMargin);
+    const maxOffset = width - trailMargin - w;
+    if (maxOffset > leadMargin) {
+      const offsetX = leadMargin + Math.random() * (maxOffset - leadMargin);
       obstacle = { emoji: OBSTACLE_EMOJIS[Math.floor(Math.random() * OBSTACLE_EMOJIS.length)], offsetX, w };
     }
   }
