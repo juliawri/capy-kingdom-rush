@@ -16,6 +16,8 @@ const GRAVITY = 2400;           // px/s^2
 const JUMP_VELOCITY = 500;      // px/s
 const OBSTACLE_CLEAR_HEIGHT = 22; // must be airborne above this to clear an obstacle
 const OBSTACLE_H = 22;
+const HAZARD_OVERHANG = 0.25; // max fraction of the character's width allowed to hang over water/an obstacle before it counts as a hit
+const HAZARD_SAFE_HALF_W = PLAYER_HALF_W * (1 - HAZARD_OVERHANG);
 
 const PPM = 40;                 // pixels per "meter"
 const BASE_SPEED = 260;         // px/s at the start
@@ -386,10 +388,11 @@ function checkCollisions() {
   if (jumpHeight <= 0) {
     // require both feet to be over solid ground, not just the center point —
     // a center-only check let up to half the sprite hang visibly over water
-    // at a platform's edge while still counting as "grounded"
-    const footHalfW = PLAYER_HALF_W * 0.6;
-    const leftFoot = getTileAtWorldX(centerX - footHalfW);
-    const rightFoot = getTileAtWorldX(centerX + footHalfW);
+    // at a platform's edge while still counting as "grounded". Up to
+    // HAZARD_OVERHANG (25%) of the character's width is allowed to hang over
+    // the water before that counts against it.
+    const leftFoot = getTileAtWorldX(centerX - HAZARD_SAFE_HALF_W);
+    const rightFoot = getTileAtWorldX(centerX + HAZARD_SAFE_HALF_W);
     if (!tile || !leftFoot || !rightFoot) {
       endGame("water");
       return;
@@ -409,8 +412,10 @@ function checkCollisions() {
   if (tile && tile.obstacle && jumpHeight < OBSTACLE_CLEAR_HEIGHT) {
     const obX0 = tile.startX + tile.obstacle.offsetX;
     const obX1 = obX0 + tile.obstacle.w;
-    const pLeft = centerX - PLAYER_HALF_W * 0.45;
-    const pRight = centerX + PLAYER_HALF_W * 0.45;
+    // same HAZARD_OVERHANG allowance as the water check: up to 25% of the
+    // character's width may overlap the obstacle without counting as a hit
+    const pLeft = centerX - HAZARD_SAFE_HALF_W;
+    const pRight = centerX + HAZARD_SAFE_HALF_W;
     if (pRight > obX0 && pLeft < obX1) {
       endGame("obstacle", tile.obstacle.emoji);
     }
