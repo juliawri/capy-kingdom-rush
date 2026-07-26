@@ -199,8 +199,9 @@ function computeOpaqueBounds(img) {
 // where the auto-detected box is technically tight to the opaque pixels but
 // still reads as leaving too much of a particular source photo on-screen.
 const CROC_CROP_ADJUST = {
+  "croc4-removebg-preview.png": { trimLeft: 0.12 },
   "croc5-removebg-preview.png": { trimRight: 0.08 },
-  "croc10-removebg-preview.png": { trimRight: 0.08, trimBottom: 0.08 },
+  "croc10-removebg-preview.png": { trimRight: 0.08, trimBottom: 0.08, trimLeft: 0.06 },
 };
 
 function applyCropAdjust(box, adjust) {
@@ -293,7 +294,7 @@ function spawnTile(afterX) {
   const distanceMeters = scrollX / PPM;
   const obstacleChance = Math.min(0.22, 0.05 + distanceMeters / 14000);
   let obstacle = null;
-  if (Math.random() < obstacleChance) {
+  if (type === "croc" && Math.random() < obstacleChance) {
     // keep obstacles well clear of both tile edges. Too close to the leading
     // edge and a player who just landed from crossing the prior gap has no
     // real reaction time before needing to jump again; too close to the
@@ -697,7 +698,7 @@ function drawTiles() {
       // filled red box around the obstacle's actual collision bounds so it
       // reads clearly as a hazard rather than blending in with the scenery
       const boxPad = 4;
-      ctx.fillStyle = "#ff2d2d";
+      ctx.fillStyle = "#c41e1e";
       roundRect(ox - boxPad, GROUND_Y - 30, t.obstacle.w + boxPad * 2, 30, 6);
       ctx.fill();
 
