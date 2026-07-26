@@ -240,6 +240,26 @@ canvas#gameCanvas {
   user-select: none;
 }
 
+/* on phones, the canvas's native 900x420 (~2.1:1) aspect renders as a thin
+   letterboxed strip. Locking .game-frame to a taller box and having the
+   canvas fill it via object-fit: cover crops the sides instead of shrinking
+   everything down, so the play area actually fills the screen — the player
+   (fixed near the left of the 900-wide world) stays framed via a left-biased
+   object-position rather than a symmetric center crop, which would cut them
+   off since they don't sit in the middle of the world. */
+@media (max-width: 700px) {
+  .game-frame {
+    aspect-ratio: 4 / 5;
+    max-height: 68vh;
+  }
+
+  canvas#gameCanvas {
+    height: 100%;
+    object-fit: cover;
+    object-position: 18% center;
+  }
+}
+
 .hud {
   position: absolute;
   top: 0; left: 0; right: 0;
